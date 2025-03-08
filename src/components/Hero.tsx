@@ -1,26 +1,32 @@
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { ArrowDown } from 'lucide-react';
 
 const Hero = () => {
-  const parallaxRef = useRef<HTMLDivElement>(null);
-  const textRef = useRef<HTMLDivElement>(null);
+  const heroRef = useRef<HTMLDivElement>(null);
+  const textBannerRef = useRef<HTMLDivElement>(null);
+  const [scrollPosition, setScrollPosition] = useState(0);
 
   useEffect(() => {
-    const handleMouseMove = (e: MouseEvent) => {
-      if (!parallaxRef.current || !textRef.current) return;
+    const handleScroll = () => {
+      const position = window.scrollY;
+      setScrollPosition(position);
       
-      const x = (window.innerWidth - e.pageX * 2) / 100;
-      const y = (window.innerHeight - e.pageY * 2) / 100;
-      
-      parallaxRef.current.style.transform = `translateX(${x}px) translateY(${y}px)`;
-      textRef.current.style.transform = `translateX(${x * 0.5}px) translateY(${y * 0.5}px)`;
+      if (textBannerRef.current) {
+        // Calculate opacity based on scroll position
+        const opacity = Math.min(position / 300, 1);
+        textBannerRef.current.style.opacity = opacity.toString();
+        
+        // Calculate translateY for parallax effect
+        const translateY = Math.max(0, 50 - position / 5);
+        textBannerRef.current.style.transform = `translateY(${translateY}px)`;
+      }
     };
 
-    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('scroll', handleScroll);
     
     return () => {
-      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('scroll', handleScroll);
     };
   }, []);
 
@@ -29,52 +35,52 @@ const Hero = () => {
   };
 
   return (
-    <section id="home" className="relative min-h-screen flex items-center justify-center overflow-hidden">
+    <section id="home" ref={heroRef} className="relative h-screen overflow-hidden">
+      {/* Background Image (fixed ratio container) */}
       <div className="absolute inset-0 z-0">
         <div 
-          className="w-full h-full bg-cover bg-center opacity-70"
+          className="w-full h-full bg-cover bg-center"
           style={{ 
-            backgroundImage: `url('/lovable-uploads/dda52f04-de48-45ea-9d2c-c40444280f7c.png')`,
+            backgroundImage: `url('https://images.unsplash.com/photo-1506744038136-46273834b3fb')`,
             filter: 'grayscale(30%)'
           }}
         />
-        <div className="absolute inset-0 bg-background/40 backdrop-blur-[2px]"></div>
+        {/* Overlay gradient */}
+        <div className="absolute inset-0 bg-gradient-to-b from-transparent to-background/90"></div>
       </div>
       
+      {/* Foreground Image (fixed ratio container) */}
       <div 
-        ref={parallaxRef}
-        className="absolute inset-0 z-10 pointer-events-none"
-      >
-        <div className="absolute top-1/3 left-1/4 w-24 h-24 rounded-full bg-primary/5 blur-3xl animate-pulse-slow"></div>
-        <div className="absolute bottom-1/3 right-1/4 w-32 h-32 rounded-full bg-primary/5 blur-3xl animate-pulse-slow" style={{ animationDelay: '1s' }}></div>
-      </div>
+        className="absolute inset-0 z-10"
+        style={{
+          backgroundImage: `url('https://images.unsplash.com/photo-1469474968028-56623f02e42e')`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          opacity: Math.max(0, 1 - scrollPosition / 400)
+        }}
+      />
       
-      <div className="container-custom relative z-20">
-        <div 
-          ref={textRef}
-          className="max-w-4xl mx-auto text-center"
-        >
+      {/* Text Banner that appears on scroll */}
+      <div 
+        ref={textBannerRef}
+        className="absolute inset-x-0 top-1/2 transform -translate-y-1/2 z-20 text-center px-4 opacity-0 transition-opacity duration-300"
+      >
+        <div className="bg-background/80 backdrop-blur-md p-8 md:p-12 max-w-4xl mx-auto rounded-lg">
           <h1 className="text-5xl md:text-7xl font-medium leading-tight mb-6 tracking-tighter">
             Software Developer & Creative Technologist
           </h1>
           <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto mb-10">
             Specializing in robotics, AI, and graphic design with a passion for creating innovative technological solutions.
           </p>
-          <div className="flex justify-center">
-            <button onClick={scrollToAbout} className="btn-primary flex items-center gap-2">
-              Explore My Work
-              <ArrowDown size={16} />
-            </button>
-          </div>
         </div>
       </div>
       
+      {/* Scroll down indicator */}
       <div className="absolute bottom-12 left-1/2 transform -translate-x-1/2 z-20 animate-bounce">
         <button 
           onClick={scrollToAbout}
           aria-label="Scroll down"
-
-          className="flex flex-col items-center gap-2 text-sm text-muted-foreground"
+          className="flex flex-col items-center gap-2 text-sm text-white"
         >
           <span>Scroll</span>
           <ArrowDown size={18} />

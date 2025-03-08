@@ -1,6 +1,6 @@
 
 import { useEffect, useRef, useState } from 'react';
-import { ArrowRight } from 'lucide-react';
+import { ArrowRight, ArrowLeft } from 'lucide-react';
 
 const projects = [
   {
@@ -26,92 +26,131 @@ const projects = [
     description: "A comprehensive brand identity system featuring clean typography and versatile design elements.",
     category: "Graphic Design",
     image: "https://images.unsplash.com/photo-1634942537034-2531766767d1?q=80&w=1024&auto=format&fit=crop"
+  },
+  {
+    title: "Smart Home Automation Interface",
+    description: "A user-friendly interface for controlling smart home devices with voice commands and customizable routines.",
+    category: "IoT & UI Design",
+    image: "https://images.unsplash.com/photo-1518495973542-4542c06a5843?q=80&w=1024&auto=format&fit=crop"
+  },
+  {
+    title: "Neural Network Visualization Tool",
+    description: "An educational tool for visualizing how neural networks process and transform data.",
+    category: "AI & Education",
+    image: "https://images.unsplash.com/photo-1523712999610-f77fbcfc3843?q=80&w=1024&auto=format&fit=crop"
   }
 ];
 
 const Projects = () => {
-  const sectionRef = useRef<HTMLElement>(null);
-  const projectsRef = useRef<(HTMLElement | null)[]>([]);
-  const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
+  const sliderRef = useRef<HTMLDivElement>(null);
+  const [activeIndex, setActiveIndex] = useState(0);
+  const [isAnimating, setIsAnimating] = useState(false);
 
-  useEffect(() => {
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            entry.target.classList.add('appear');
-          }
-        });
-      },
-      { threshold: 0.1 }
-    );
+  const handleSlideChange = (direction: 'next' | 'prev') => {
+    if (isAnimating) return;
+    
+    setIsAnimating(true);
+    
+    if (direction === 'next') {
+      setActiveIndex((prev) => (prev + 1) % projects.length);
+    } else {
+      setActiveIndex((prev) => (prev - 1 + projects.length) % projects.length);
+    }
+    
+    setTimeout(() => setIsAnimating(false), 500);
+  };
 
-    const currentElements = projectsRef.current.filter(Boolean) as HTMLElement[];
-    currentElements.forEach((el) => observer.observe(el));
-
-    return () => {
-      currentElements.forEach((el) => observer.unobserve(el));
-    };
-  }, []);
+  const visibleProjects = () => {
+    // Calculate how many projects to show based on current index
+    const result = [];
+    const itemsToShow = window.innerWidth >= 1024 ? 3 : window.innerWidth >= 768 ? 2 : 1;
+    
+    for (let i = 0; i < itemsToShow; i++) {
+      const index = (activeIndex + i) % projects.length;
+      result.push(projects[index]);
+    }
+    
+    return result;
+  };
 
   return (
-    <section id="projects" ref={sectionRef} className="py-24 bg-secondary/50">
+    <section id="projects" className="py-24 bg-secondary/50 overflow-hidden">
       <div className="container-custom">
-        <h2 
-          ref={(el) => (projectsRef.current[0] = el)} 
-          className="section-title slide-up"
-        >
-          Featured Projects
-        </h2>
-        
-        <div className="grid md:grid-cols-2 gap-8">
-          {projects.map((project, index) => (
-            <div 
-              key={project.title}
-              ref={(el) => (projectsRef.current[index + 1] = el)} 
-              className="slide-up group"
-              style={{ transitionDelay: `${index * 150}ms` }}
-              onMouseEnter={() => setHoveredIndex(index)}
-              onMouseLeave={() => setHoveredIndex(null)}
+        <div className="flex justify-between items-center mb-12">
+          <h2 className="section-title slide-up m-0">Featured Projects</h2>
+          
+          <div className="flex items-center gap-2">
+            <button 
+              onClick={() => handleSlideChange('prev')}
+              disabled={isAnimating}
+              className="p-2 rounded-full bg-background hover:bg-muted transition-colors disabled:opacity-50"
+              aria-label="Previous project"
             >
-              <div className="bg-background rounded-lg overflow-hidden h-full flex flex-col">
-                <div className="relative h-64 overflow-hidden">
-                  <div 
-                    className="absolute inset-0 bg-cover bg-center transition-all duration-1000 ease-out"
-                    style={{ 
-                      backgroundImage: `url(${project.image})`,
-                      transform: hoveredIndex === index ? 'scale(1.05)' : 'scale(1)'
-                    }}
-                  />
-                  <div className="absolute inset-0 bg-primary/30"></div>
-                  <div className="absolute top-4 left-4">
-                    <span className="text-xs uppercase tracking-wider text-white/90 bg-primary/40 backdrop-blur-sm px-3 py-1 rounded-full">
-                      {project.category}
-                    </span>
-                  </div>
-                </div>
-                
-                <div className="p-6 flex flex-col flex-grow">
-                  <h3 className="text-xl font-medium mb-2">{project.title}</h3>
-                  <p className="text-muted-foreground text-sm mb-6 flex-grow">{project.description}</p>
-                  <a href="#" className="inline-flex items-center gap-2 text-primary/90 hover:text-primary transition-colors group">
-                    View Details 
-                    <ArrowRight size={16} className="transition-transform group-hover:translate-x-1" />
-                  </a>
-                </div>
-              </div>
-            </div>
-          ))}
+              <ArrowLeft size={20} />
+            </button>
+            <button 
+              onClick={() => handleSlideChange('next')}
+              disabled={isAnimating}
+              className="p-2 rounded-full bg-background hover:bg-muted transition-colors disabled:opacity-50"
+              aria-label="Next project"
+            >
+              <ArrowRight size={20} />
+            </button>
+          </div>
         </div>
         
         <div 
-          ref={(el) => (projectsRef.current[projects.length + 1] = el)} 
-          className="fade-in mt-12 text-center"
+          ref={sliderRef}
+          className="relative overflow-hidden"
         >
-          <a href="#" className="btn-primary inline-flex items-center gap-2">
-            View All Projects
-            <ArrowRight size={16} />
-          </a>
+          <div 
+            className="flex transition-transform duration-500 ease-out"
+            style={{ transform: `translateX(-${activeIndex * 100 / (window.innerWidth >= 1024 ? 3 : window.innerWidth >= 768 ? 2 : 1)}%)` }}
+          >
+            {projects.map((project, index) => (
+              <div 
+                key={index}
+                className="w-full min-w-full md:min-w-[calc(50%-1rem)] lg:min-w-[calc(33.333%-1rem)] px-2"
+              >
+                <div className="bg-background rounded-lg overflow-hidden h-full shadow-lg hover:shadow-xl transition-shadow duration-300">
+                  <div className="relative h-64 overflow-hidden">
+                    <img 
+                      src={project.image} 
+                      alt={project.title}
+                      className="w-full h-full object-cover transition-transform duration-500 hover:scale-105"
+                    />
+                    <div className="absolute top-4 left-4">
+                      <span className="text-xs uppercase tracking-wider text-white/90 bg-primary/80 backdrop-blur-sm px-3 py-1 rounded-full">
+                        {project.category}
+                      </span>
+                    </div>
+                  </div>
+                  
+                  <div className="p-6">
+                    <h3 className="text-xl font-medium mb-2">{project.title}</h3>
+                    <p className="text-muted-foreground text-sm mb-6">{project.description}</p>
+                    <a href="#" className="inline-flex items-center gap-2 text-primary/90 hover:text-primary transition-colors group">
+                      View Details 
+                      <ArrowRight size={16} className="transition-transform group-hover:translate-x-1" />
+                    </a>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+        
+        <div className="mt-8 flex justify-center gap-2">
+          {projects.map((_, index) => (
+            <button
+              key={index}
+              className={`w-2 h-2 rounded-full transition-colors ${
+                index === activeIndex ? 'bg-primary' : 'bg-muted-foreground/30'
+              }`}
+              onClick={() => setActiveIndex(index)}
+              aria-label={`Go to slide ${index + 1}`}
+            />
+          ))}
         </div>
       </div>
     </section>
