@@ -57,7 +57,7 @@ const Navbar = () => {
         
         {/* Desktop Navigation */}
         <nav className="hidden md:flex space-x-8">
-          {["home", "about", "skills", "projects", "contact"].map((item) => (
+          {["home", "about", "projects-scroll", "skills", "projects", "contact"].map((item) => (
             <a
               key={item}
               onClick={(e) => {
@@ -70,7 +70,7 @@ const Navbar = () => {
                 activeSection === item && "active-nav-link"
               )}
             >
-              {item}
+              {item === "projects-scroll" ? "Projects" : item}
             </a>
           ))}
         </nav>
@@ -93,7 +93,7 @@ const Navbar = () => {
         )}
       >
         <nav className="flex flex-col space-y-6 text-lg">
-          {["home", "about", "skills", "projects", "contact"].map((item) => (
+          {["home", "about", "projects-scroll", "skills", "projects", "contact"].map((item) => (
             <a
               key={item}
               onClick={(e) => {
@@ -106,7 +106,7 @@ const Navbar = () => {
                 activeSection === item ? "text-foreground font-medium" : "text-muted-foreground"
               )}
             >
-              {item}
+              {item === "projects-scroll" ? "Projects" : item}
             </a>
           ))}
         </nav>
