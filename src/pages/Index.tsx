@@ -35,6 +35,13 @@ const Index = () => {
     
     handleScrollAnimations();
     
+    // Clean up any scroll locks when component unmounts
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, []);
+
+  useEffect(() => {
     // Update page title
     document.title = "Aaryan Shrestha | Software Developer & Creative Technologist";
   }, []);

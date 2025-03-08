@@ -29,19 +29,26 @@ const ProjectsScroll = () => {
   const [activeProject, setActiveProject] = useState(0);
   const sectionRef = useRef<HTMLElement>(null);
   const projectRefs = useRef<(HTMLDivElement | null)[]>([]);
-  const [scrollLocked, setScrollLocked] = useState(false);
   const [isInView, setIsInView] = useState(false);
+  const [allowScroll, setAllowScroll] = useState(false);
+  const transitionIntervalRef = useRef<number | null>(null);
 
+  // Track when the section enters viewport
   useEffect(() => {
     const observer = new IntersectionObserver(
       (entries) => {
-        if (entries[0].isIntersecting) {
-          setIsInView(true);
-        } else {
-          setIsInView(false);
+        const isIntersecting = entries[0].isIntersecting;
+        setIsInView(isIntersecting);
+        
+        if (isIntersecting && activeProject < projects.length - 1) {
+          // When section comes into view, disable scrolling if not at final project
+          document.body.style.overflow = 'hidden';
+        } else if (!isIntersecting) {
+          // Re-enable scrolling when section leaves view
+          document.body.style.overflow = '';
         }
       },
-      { threshold: 0.3 }
+      { threshold: 0.5 }
     );
 
     if (sectionRef.current) {
@@ -52,63 +59,43 @@ const ProjectsScroll = () => {
       if (sectionRef.current) {
         observer.unobserve(sectionRef.current);
       }
+      document.body.style.overflow = '';
     };
-  }, []);
+  }, [activeProject]);
 
+  // Auto-transition between projects
   useEffect(() => {
-    let lastScrollY = window.scrollY;
-    let lastTime = Date.now();
-    const minScrollTime = 1000; // 1 second cooldown for scroll
-    
-    const handleScroll = () => {
-      if (!isInView || scrollLocked) return;
-      
-      const now = Date.now();
-      const scrollY = window.scrollY;
-      const isScrollingDown = scrollY > lastScrollY;
-      
-      // Check if enough time has passed since last scroll action
-      if (now - lastTime < minScrollTime) return;
-      
-      if (isScrollingDown && activeProject < projects.length - 1) {
-        setScrollLocked(true);
+    if (isInView && activeProject < projects.length - 1) {
+      // Start the transition interval when section is in view and not at final project
+      transitionIntervalRef.current = window.setTimeout(() => {
         setActiveProject(prev => prev + 1);
-        lastTime = now;
-        
-        // Disable further scrolling for a short duration
-        setTimeout(() => setScrollLocked(false), minScrollTime);
-        
-        // Prevent default scroll if we're handling the transition
-        if (sectionRef.current) {
-          window.scrollTo({
-            top: window.scrollY,
-            behavior: 'auto'
-          });
-        }
-      } else if (!isScrollingDown && activeProject > 0) {
-        setScrollLocked(true);
-        setActiveProject(prev => prev - 1);
-        lastTime = now;
-        
-        setTimeout(() => setScrollLocked(false), minScrollTime);
-        
-        if (sectionRef.current) {
-          window.scrollTo({
-            top: window.scrollY,
-            behavior: 'auto'
-          });
-        }
-      }
+      }, 4000); // 4 seconds per project
       
-      lastScrollY = scrollY;
-    };
-
-    window.addEventListener('scroll', handleScroll);
+      return () => {
+        if (transitionIntervalRef.current) {
+          clearTimeout(transitionIntervalRef.current);
+        }
+      };
+    }
     
-    return () => {
-      window.removeEventListener('scroll', handleScroll);
-    };
-  }, [activeProject, isInView, scrollLocked]);
+    // Enable scrolling when reached final project
+    if (activeProject === projects.length - 1) {
+      const timer = setTimeout(() => {
+        setAllowScroll(true);
+        document.body.style.overflow = '';
+      }, 1000); // Short delay before re-enabling scroll
+      
+      return () => clearTimeout(timer);
+    }
+  }, [isInView, activeProject]);
+
+  // Handle manual project navigation
+  const goToProject = (index: number) => {
+    if (transitionIntervalRef.current) {
+      clearTimeout(transitionIntervalRef.current);
+    }
+    setActiveProject(index);
+  };
 
   return (
     <section 
@@ -197,7 +184,7 @@ const ProjectsScroll = () => {
           {projects.map((_, idx) => (
             <button 
               key={idx}
-              onClick={() => setActiveProject(idx)} 
+              onClick={() => goToProject(idx)} 
               className={`w-3 h-3 rounded-full transition-colors ${
                 activeProject === idx ? 'bg-primary' : 'bg-muted-foreground/30'
               }`}
