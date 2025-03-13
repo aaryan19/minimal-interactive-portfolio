@@ -11,7 +11,7 @@ import Footer from '@/components/Footer';
 
 const Index = () => {
   useEffect(() => {
-    // Function to handle scroll animations
+    // handles scroll animations
     const handleScrollAnimations = () => {
       const animatedElements = document.querySelectorAll('.fade-in, .slide-up, .slide-in-right, .scale-in');
       
